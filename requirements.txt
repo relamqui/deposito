@@ -1,7 +1,0 @@
-fastapi
-pydantic
-rapidfuzz
-unidecode
-psycopg2-binary
-python-dotenv
-uvicorn
