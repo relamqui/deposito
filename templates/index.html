@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Pedidos | Depósito Joel</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --accent-yellow: #f59e0b;
+            --accent-green: #10b981;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(15, 23, 42, 1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, rgba(30, 58, 138, 0.2) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, rgba(15, 23, 42, 1) 0, transparent 50%);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .kanban-board {
+            display: flex;
+            flex: 1;
+            padding: 30px;
+            gap: 30px;
+            overflow-x: auto;
+        }
+
+        .column {
+            flex: 1;
+            min-width: 350px;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .column-header {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .column-header.yellow { border-top: 4px solid var(--accent-yellow); }
+        .column-header.green { border-top: 4px solid var(--accent-green); }
+
+        .badge {
+            background: rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .cards-container {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .client-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+            color: #fff;
+        }
+
+        .client-phone {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .time {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            background: rgba(0,0,0,0.3);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .items-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 15px 0;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        .items-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+        }
+
+        .items-list li:last-child { border-bottom: none; }
+
+        .item-qty { font-weight: 700; color: #fff; margin-right: 8px; }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .total {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-green);
+        }
+
+        .btn-action {
+            background: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-action:hover {
+            background: #059669;
+            color: #fff;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: #64748b;
+            padding: 40px 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><div class="status-dot"></div> Depósito Joel - Operação Ao Vivo</h1>
+        <div style="color: #94a3b8; font-size: 0.9rem;">Atualizando em tempo real...</div>
+    </header>
+
+    <div class="kanban-board">
+        <!-- Coluna 1: Montando -->
+        <div class="column">
+            <div class="column-header yellow">
+                <span>🛒 Em Atendimento (Montando)</span>
+                <span class="badge" id="count-abertos">0</span>
+            </div>
+            <div class="cards-container" id="col-abertos">
+                <!-- Cards renderizados via JS -->
+            </div>
+        </div>
+
+        <!-- Coluna 2: Em Preparação -->
+        <div class="column">
+            <div class="column-header green">
+                <span>📦 Em Preparação (Pedidos Fechados)</span>
+                <span class="badge" id="count-preparacao">0</span>
+            </div>
+            <div class="cards-container" id="col-preparacao">
+                <!-- Cards renderizados via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function formatMoney(value) {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function createCard(pedido, isPreparacao) {
+            let itemsHtml = pedido.itens.map(item => `
+                <li>
+                    <div><span class="item-qty">${item.quantidade}x</span> ${item.nome}</div>
+                    <div>${formatMoney(item.subtotal)}</div>
+                </li>
+            `).join('');
+
+            if (pedido.itens.length === 0) {
+                itemsHtml = '<li style="color: #64748b; font-style: italic;">O cliente iniciou o atendimento, mas o carrinho ainda está vazio.</li>';
+            }
+
+            let footerHtml = `<div class="total">${formatMoney(pedido.total)}</div>`;
+            
+            if (isPreparacao) {
+                footerHtml += `<button class="btn-action" onclick="concluirPedido(${pedido.id})">Entregar ✅</button>`;
+            } else {
+                footerHtml += `<div style="font-size: 0.8rem; color: #f59e0b;">Aguardando cliente fechar pedido...</div>`;
+            }
+
+            return `
+                <div class="card" id="card-${pedido.id}">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="client-name">#${pedido.id} - ${pedido.cliente}</h3>
+                            <p class="client-phone">WhatsApp: ${pedido.telefone}</p>
+                        </div>
+                        <div class="time">${pedido.hora}</div>
+                    </div>
+                    <ul class="items-list">
+                        ${itemsHtml}
+                    </ul>
+                    <div class="card-footer">
+                        ${footerHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function fetchPedidos() {
+            try {
+                const response = await fetch('/api/pedidos');
+                const data = await response.json();
+
+                // Montando (Abertos)
+                const colAbertos = document.getElementById('col-abertos');
+                document.getElementById('count-abertos').innerText = data.abertos.length;
+                if(data.abertos.length === 0) {
+                    colAbertos.innerHTML = '<div class="empty-state">Nenhum cliente comprando agora.</div>';
+                } else {
+                    colAbertos.innerHTML = data.abertos.map(p => createCard(p, false)).join('');
+                }
+
+                // Em Preparação
+                const colPreparacao = document.getElementById('col-preparacao');
+                document.getElementById('count-preparacao').innerText = data.preparacao.length;
+                if(data.preparacao.length === 0) {
+                    colPreparacao.innerHTML = '<div class="empty-state">Nenhum pedido na fila de preparação.</div>';
+                } else {
+                    colPreparacao.innerHTML = data.preparacao.map(p => createCard(p, true)).join('');
+                }
+
+            } catch (error) {
+                console.error("Erro ao buscar pedidos:", error);
+            }
+        }
+
+        async function concluirPedido(id) {
+            try {
+                const res = await fetch(`/api/pedidos/${id}/concluir`, { method: 'POST' });
+                if(res.ok) {
+                    // Toca um sonzinho agradável de conclusão (opcional)
+                    fetchPedidos(); // Atualiza a tela na hora
+                }
+            } catch (error) {
+                alert("Erro ao tentar concluir pedido.");
+            }
+        }
+
+        // Buscar dados ao abrir
+        fetchPedidos();
+        // Atualizar a cada 3 segundos (Magia em tempo real)
+        setInterval(fetchPedidos, 3000);
+
+    </script>
+</body>
+</html>

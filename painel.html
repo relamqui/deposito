@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Kanban de Pedidos | Depósito Joel</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --accent-yellow: #f59e0b;
+            --accent-green: #10b981;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(15, 23, 42, 1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, rgba(30, 58, 138, 0.2) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, rgba(15, 23, 42, 1) 0, transparent 50%);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .kanban-board {
+            display: flex;
+            flex: 1;
+            padding: 30px;
+            gap: 30px;
+            overflow-x: auto;
+        }
+
+        .column {
+            flex: 1;
+            min-width: 350px;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .column-header {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .column-header.yellow { border-top: 4px solid var(--accent-yellow); }
+        .column-header.green { border-top: 4px solid var(--accent-green); }
+
+        .badge {
+            background: rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .cards-container {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .client-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+            color: #fff;
+        }
+
+        .client-phone {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .time {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            background: rgba(0,0,0,0.3);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .items-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 15px 0;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        .items-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+        }
+
+        .items-list li:last-child { border-bottom: none; }
+        .item-qty { font-weight: 700; color: #fff; margin-right: 8px; }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .total {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-green);
+        }
+
+        .btn-action {
+            background: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-action:hover {
+            background: #059669;
+            color: #fff;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #64748b;
+            padding: 40px 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><div class="status-dot"></div> Depósito Joel - Operação Ao Vivo</h1>
+        <div style="color: #94a3b8; font-size: 0.9rem;" id="last-update">Atualizando em tempo real...</div>
+    </header>
+
+    <div class="kanban-board">
+        <!-- Coluna 1: Montando -->
+        <div class="column">
+            <div class="column-header yellow">
+                <span>🛒 Em Atendimento (Montando)</span>
+                <span class="badge" id="count-abertos">0</span>
+            </div>
+            <div class="cards-container" id="col-abertos">
+                <div class="empty-state">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Coluna 2: Em Preparação -->
+        <div class="column">
+            <div class="column-header green">
+                <span>📦 Em Preparação (Pedidos Fechados)</span>
+                <span class="badge" id="count-preparacao">0</span>
+            </div>
+            <div class="cards-container" id="col-preparacao">
+                <div class="empty-state">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Coluna 3: Saiu para Entrega -->
+        <div class="column">
+            <div class="column-header" style="border-top: 4px solid #3b82f6;">
+                <span>🚚 Saiu para Entrega</span>
+                <span class="badge" id="count-entrega">0</span>
+            </div>
+            <div class="cards-container" id="col-entrega">
+                <div class="empty-state">Carregando...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WEBHOOK_URL = "https://n8n-n8n.ioms5g.easypanel.host/webhook/painel-pedidos";
+        
+        function formatMoney(value) {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function createCard(pedido, columnType) {
+            let itemsHtml = '';
+            
+            if (columnType === 'preparacao') {
+                // Checklist interativo
+                itemsHtml = pedido.itens.map(item => `
+                    <li style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding: 10px 0;">
+                        <div style="flex:1;">${item.nome}</div>
+                        <div style="font-size:0.8rem; color:#94a3b8; width: 60px; text-align: right;">Pediu: ${item.quantidade}</div>
+                        <input type="number" class="prep-input" data-max="${item.quantidade}" oninput="checkCompletion(${pedido.id})" min="0" max="${item.quantidade}" style="width:50px; background:rgba(0,0,0,0.3); border:1px solid var(--accent-yellow); color:#fff; padding:6px; border-radius:6px; text-align:center; font-weight: bold; outline: none;" placeholder="0">
+                    </li>
+                `).join('');
+            } else {
+                // Apenas visualização para 'aberto' ou 'entrega'
+                itemsHtml = pedido.itens.map(item => `
+                    <li>
+                        <div><span class="item-qty">${item.quantidade}x</span> ${item.nome}</div>
+                        <div>${formatMoney(item.subtotal)}</div>
+                    </li>
+                `).join('');
+            }
+
+            if (pedido.itens.length === 0) {
+                itemsHtml = '<li style="color: #64748b; font-style: italic;">O cliente iniciou o atendimento, mas o carrinho ainda está vazio.</li>';
+            }
+
+            let footerHtml = '';
+            
+            if (columnType === 'preparacao') {
+                footerHtml = `
+                    <div style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 0.9rem; color: #cbd5e1;">Total a separar:</span>
+                            <span class="total">${formatMoney(pedido.total)}</span>
+                        </div>
+                        ${pedido.endereco ? `<div style="font-size:0.8rem; color:#94a3b8; margin-bottom:4px;">📍 ${pedido.endereco}</div>` : ''}
+                        ${pedido.pagamento ? `<div style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px;">💳 ${pedido.pagamento}</div>` : ''}
+                        <input type="text" id="entregador-${pedido.id}" oninput="checkCompletion(${pedido.id})" placeholder="👤 Nome do Entregador" style="width: 100%; box-sizing: border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:10px; border-radius:6px; margin-bottom: 10px; outline: none;">
+                        <div id="btn-entregar-${pedido.id}" style="display:none; width: 100%;">
+                            <button class="btn-action" style="width:100%; padding: 12px; font-size: 1.1rem; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);" onclick="enviarEntrega(${pedido.id})">Entregar Pedido 🚀</button>
+                        </div>
+                    </div>
+                `;
+            } else if (columnType === 'entrega') {
+                footerHtml = `
+                    <div style="width:100%;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <div style="font-size: 0.8rem; color: #3b82f6; font-weight: 600;">🚚 Saiu para Entrega / Cliente Avisado</div>
+                            <div class="total">${formatMoney(pedido.total)}</div>
+                        </div>
+                        ${pedido.endereco ? `<div style="font-size:0.8rem; color:#94a3b8; margin-bottom:4px;">📍 ${pedido.endereco}</div>` : ''}
+                        ${pedido.pagamento ? `<div style="font-size:0.8rem; color:#94a3b8;">💳 ${pedido.pagamento}</div>` : ''}
+                    </div>
+                `;
+            } else {
+                footerHtml = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                        <div style="font-size: 0.8rem; color: #f59e0b;">Aguardando cliente fechar...</div>
+                        <div class="total">${formatMoney(pedido.total)}</div>
+                    </div>
+                `;
+            }
+
+            // Converter data para hora
+            let horaStr = "";
+            if (pedido.criado_em) {
+                const d = new Date(pedido.criado_em);
+                horaStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+
+            return `
+                <div class="card" id="card-${pedido.id}">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="client-name">#${pedido.id} - ${pedido.cliente}</h3>
+                            <p class="client-phone">WhatsApp: ${pedido.telefone}</p>
+                        </div>
+                        <div class="time">${horaStr}</div>
+                    </div>
+                    <ul class="items-list">
+                        ${itemsHtml}
+                    </ul>
+                    <div class="card-footer">
+                        ${footerHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function checkCompletion(pedidoId) {
+            const card = document.getElementById(`card-${pedidoId}`);
+            if (!card) return;
+            
+            let isComplete = true;
+            const inputs = card.querySelectorAll('.prep-input');
+            inputs.forEach(inp => {
+                if (parseInt(inp.value) !== parseInt(inp.getAttribute('data-max'))) {
+                    isComplete = false;
+                }
+            });
+
+            const entregador = document.getElementById(`entregador-${pedidoId}`).value.trim();
+            if (entregador === "") isComplete = false;
+
+            const btnWrapper = document.getElementById(`btn-entregar-${pedidoId}`);
+            if (isComplete) {
+                btnWrapper.style.display = "block";
+                // Muda a cor da borda do input do entregador para verde
+                document.getElementById(`entregador-${pedidoId}`).style.borderColor = "var(--accent-green)";
+            } else {
+                btnWrapper.style.display = "none";
+                document.getElementById(`entregador-${pedidoId}`).style.borderColor = "rgba(255,255,255,0.2)";
+            }
+        }
+
+        async function enviarEntrega(pedidoId) {
+            const entregador = document.getElementById(`entregador-${pedidoId}`).value.trim();
+            const btn = document.querySelector(`#btn-entregar-${pedidoId} button`);
+            const originalText = btn.innerText;
+            btn.innerText = "Avisando Entregador...";
+            btn.disabled = true;
+
+            try {
+                const WEBHOOK_ENTREGA = "https://n8n-n8n.ioms5g.easypanel.host/webhook/pedido-entregar";
+                const res = await fetch(WEBHOOK_ENTREGA, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        carrinho_id: pedidoId,
+                        entregador: entregador
+                    })
+                });
+                
+                if(!res.ok) throw new Error("Falha no N8N");
+
+                // Remove o card da tela imediatamente para dar feedback visual antes mesmo do auto-refresh
+                const card = document.getElementById(`card-${pedidoId}`);
+                if(card) {
+                    card.style.transform = "scale(0.8)";
+                    card.style.opacity = "0";
+                    setTimeout(() => card.remove(), 300);
+                }
+                
+                fetchPedidos();
+            } catch(e) {
+                alert("Erro ao disparar entrega. Verifique se o workflow no N8N está ativo.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function updateColumn(containerId, pedidos, columnType) {
+            const container = document.getElementById(containerId);
+            
+            if (pedidos.length === 0) {
+                container.innerHTML = '<div class="empty-state">Nenhum pedido aqui no momento.</div>';
+                return;
+            }
+
+            if (container.querySelector('.empty-state')) {
+                container.innerHTML = '';
+            }
+
+            const newIds = pedidos.map(p => `card-${p.id}`);
+
+            // Remover cards antigos
+            Array.from(container.querySelectorAll('.card')).forEach(card => {
+                if (!newIds.includes(card.id)) {
+                    card.remove();
+                }
+            });
+
+            // Atualizar ou adicionar cards novos
+            pedidos.forEach((pedido, index) => {
+                const cardId = `card-${pedido.id}`;
+                let card = document.getElementById(cardId);
+                const pedidoJson = JSON.stringify(pedido);
+
+                if (!card) {
+                    // Criar novo
+                    const wrapper = document.createElement('div');
+                    wrapper.innerHTML = createCard(pedido, columnType);
+                    card = wrapper.firstElementChild;
+                    card.setAttribute('data-json', pedidoJson);
+                    
+                    if (index >= container.children.length) {
+                        container.appendChild(card);
+                    } else {
+                        container.insertBefore(card, container.children[index]);
+                    }
+                } else {
+                    // Ja existe, checa se teve mudança nos dados
+                    const oldJson = card.getAttribute('data-json');
+                    if (oldJson !== pedidoJson) {
+                        const wrapper = document.createElement('div');
+                        wrapper.innerHTML = createCard(pedido, columnType);
+                        const updatedCard = wrapper.firstElementChild;
+                        updatedCard.setAttribute('data-json', pedidoJson);
+                        updatedCard.style.animation = 'none'; // Evitar animação no update para não piscar
+                        container.replaceChild(updatedCard, card);
+                        card = updatedCard;
+                    }
+                    // Garantir a ordem correta na tela
+                    if (container.children[index] !== card) {
+                        container.insertBefore(card, container.children[index]);
+                    }
+                }
+            });
+        }
+
+        async function fetchPedidos() {
+            try {
+                const response = await fetch(WEBHOOK_URL);
+                if (!response.ok) throw new Error("Erro de rede");
+                
+                const dataRaw = await response.json();
+                
+                // Agrupar os dados brutos do PostgreSQL pelo carrinho_id
+                const pedidosDict = {};
+                
+                dataRaw.forEach(row => {
+                    const cid = row.carrinho_id;
+                    if (!pedidosDict[cid]) {
+                        pedidosDict[cid] = {
+                            id: cid,
+                            status: row.status,
+                            cliente: row.cliente_nome || "Cliente Sem Nome",
+                            telefone: row.telefone,
+                            criado_em: row.carrinho_criado_em,
+                            endereco: row.endereco_entrega || null,
+                            pagamento: row.forma_pagamento || null,
+                            itens: [],
+                            total: 0.0
+                        };
+                    }
+                    
+                    if (row.item_id) {
+                        const qtd = parseInt(row.quantidade);
+                        const preco = parseFloat(row.preco_unitario);
+                        const subtotal = qtd * preco;
+                        
+                        pedidosDict[cid].total += subtotal;
+                        pedidosDict[cid].itens.push({
+                            nome: row.produto_nome,
+                            quantidade: qtd,
+                            preco: preco,
+                            subtotal: subtotal
+                        });
+                    }
+                });
+
+                // Separar em três listas
+                const abertos = [];
+                const preparacao = [];
+                const entrega = [];
+                
+                Object.values(pedidosDict).forEach(p => {
+                    if (p.status === 'aberto') {
+                        abertos.push(p);
+                    } else if (p.status === 'finalizado' || p.status === 'em_preparacao') {
+                        preparacao.push(p);
+                    } else if (p.status === 'ENTREGAR') {
+                        entrega.push(p);
+                    }
+                });
+
+                // Renderizar as 3 colunas com lógica inteligente para não piscar
+                document.getElementById('count-abertos').innerText = abertos.length;
+                updateColumn('col-abertos', abertos, 'aberto');
+
+                document.getElementById('count-preparacao').innerText = preparacao.length;
+                updateColumn('col-preparacao', preparacao, 'preparacao');
+
+                document.getElementById('count-entrega').innerText = entrega.length;
+                updateColumn('col-entrega', entrega, 'entrega');
+
+                // Atualizar hora
+                const now = new Date();
+                document.getElementById('last-update').innerText = `Atualizado às ${now.toLocaleTimeString()}`;
+
+            } catch (error) {
+                console.error("Erro ao buscar pedidos:", error);
+                document.getElementById('last-update').innerText = `Falha na conexão... Tentando novamente.`;
+            }
+        }
+
+        // Buscar dados ao abrir
+        fetchPedidos();
+        // Atualizar a cada 3 segundos
+        setInterval(fetchPedidos, 3000);
+
+    </script>
+</body>
+</html>

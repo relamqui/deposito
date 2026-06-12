@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+.venv
+venv/
+env/
+*.pdf
+popular_produtos.sql
+update_descricoes.sql
+produtos_test_db.txt
+*_report.md
